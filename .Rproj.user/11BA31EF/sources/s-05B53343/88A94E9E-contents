@@ -1,7 +1,8 @@
 ship_data <- data %>%
     filter(SHIPNAME %in% "BALTICO") %>%
     arrange(DATETIME, .by_group = T) %>%
-    mutate(obs_dist = geodist(cbind(LON,LAT), sequential = T, pad = T, measure = "geodesic"))
+    mutate(obs_dist = geodist(cbind(LON,LAT), sequential = T, pad = T, measure = "geodesic")) %>%
+    mutate(is_parkchar = ifelse(is_parked == 0,"No","Yes"))
 
 sel_ship <- ship_data %>%
     filter(SHIPNAME %in% "BALTICO") %>%
@@ -30,11 +31,38 @@ paste("Position: ", test$popup, "<br/>",
 )
 
 ggplot(ship_data, aes(DATETIME, SPEED)) +
-    geom_point()
-
+    geom_point() + 
+    ggtitle("Ship Speed over Time") + 
+    xlab("")
+    
 observeEvent(input$stats, {
     output$graph <- renderPlot({
         ggplot(ship_data(), aes(DATETIME, SPEED))
     })
 })
+if(input$stats == "Speed"){
+  output$graph <- renderPlot({
+    ggplot(ship_data(), aes(DATETIME, SPEED)) + 
+      geom_point() + 
+      title("Ship Speed over Time")
+  })  
+} else if(input$stats == "Distance"){
+  output$graph <- renderPlot({
+    ggplot(ship_data(), aes(DATETIME, DISTANCE)) + 
+      geom_point() + 
+      title("Ship Distance Sailed over Time")
+  })
+} else if(input$stats == "Status"){
+  output$graph <- renderPlot({
+    ggplot(ship_data(), aes(DATETIME, is_parkchar)) + 
+      geom_point() + 
+      title("Ship Distance Sailed over Time")
+  })
+} else if(input$stats == "Destination"){
+  output$graph <- renderPlot({
+    ggplot(ship_data(), aes(DATETIME, SPEED)) + 
+      geom_point() + 
+      title("Ship Distance Sailed over Time")
+  })
+}
 
