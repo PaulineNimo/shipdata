@@ -44,7 +44,8 @@ ui <- fluidPage(
                             ),
                    tabPanel(h5(strong("Graphs")),
                             br(),
-                            radioButtons("stats", label = "Select Option to Display Summary Statistics:", choices = c("Speed", "Distance", "Status","Destination"))
+                            radioButtons("stats", label = "Select Option to Display Summary Statistics:", choices = c("Speed", "Distance", "Status","Destination")),
+                            plotOutput("graph")
 
                    )
 
@@ -74,7 +75,7 @@ server <- function(input, output, session) {
     # map output
     output$marine_map <- renderLeaflet({
         leaflet(data) %>%
-            addTiles(group = "OSM", options = tileOptions(minZoom = 1, maxZoom = 16)) %>%
+            addTiles(group = "OSM", options = tileOptions(minZoom = 1, maxZoom = 17)) %>%
             fitBounds(~min(LON), ~min(LAT), ~max(LON), ~max(LAT))
     })
     # data
@@ -104,16 +105,26 @@ server <- function(input, output, session) {
 
         start_position <- sel_ship[which(sel_ship$DATETIME == end_position$DATETIME) - 1,]
         start_position$popup <- "Initial"
-        return(rbind(start_position,end_position))
+        filt_data <- rbind(start_position,end_position)
+        filt_data$labelopt <- paste("Position: ", filt_data$popup, "<br/>",
+                           "Flag: ", filt_data$FLAG, "<br/>",
+                           "Time: ", filt_data$DATETIME, "<br/>",
+                           "Speed: ", filt_data$SPEED, " knots", "<br/>",
+                           "Destination: ", filt_data$DESTINATION, "<br/>",
+                           "Course: ", filt_data$COURSE, " degrees"
+        )
+        return(filt_data)
     })
     map_render <- reactive({
         leafletProxy("marine_map", data = ship_filter()) %>%
             clearMarkers() %>%
-            addMarkers(lng = ~LON, lat = ~LAT, label = ~as.character(DATETIME)) %>%
+            addMarkers(lng = ~LON, lat = ~LAT, popup = ~labelopt,
+                       popupOptions = popupOptions(keepInView = T, closeOnClick = F, closeButton = F)) %>%
+            addPolylines(lng = ~LON, lat = ~LAT) %>%
             fitBounds(~min(LON), ~min(LAT), ~max(LON), ~max(LAT))
     })
     info_render <- reactive({
-        print(as.character(ship_filter()$DATETIME))
+        print(ship_filter()$labelopt)
 
         info_txt <- data.frame(
             dist_sailed = paste0("The most recent longest distance sailed by ",input$select_ship," in two minutes is ",formatC(ship_filter()[2,"obs_dist"], format="d", big.mark=","), " metres.
@@ -135,6 +146,8 @@ server <- function(input, output, session) {
         output$destination <- renderText({info_render()$destination})
         output$speed <- renderText({info_render()$speed})
     })
+
+    # charts
 
 }
 
