@@ -1,0 +1,68 @@
+ship_data <- data %>%
+    filter(SHIPNAME %in% "BALTICO") %>%
+    arrange(DATETIME, .by_group = T) %>%
+    mutate(obs_dist = geodist(cbind(LON,LAT), sequential = T, pad = T, measure = "geodesic")) %>%
+    mutate(is_parkchar = ifelse(is_parked == 0,"No","Yes"))
+
+sel_ship <- ship_data %>%
+    filter(SHIPNAME %in% "BALTICO") %>%
+    arrange(DATETIME)
+
+end_position <- sel_ship %>%
+    filter(obs_dist == max(obs_dist, na.rm = T)) %>%
+    arrange(desc(DATETIME)) %>%
+    filter(row_number() == 1) %>%
+    mutate(popup = "Terminal")
+
+start_position <- sel_ship[which(sel_ship$DATETIME == end_position$DATETIME) - 1,]
+start_position$popup <- "Initial"
+View(rbind(start_position,end_position))
+test <- rbind(start_position,end_position)
+as.character(test[,"DATETIME"])
+
+formatC(round(ship_filter()[2,"obs_dist"],2), format="d", big.mark=",")
+
+paste("Position: ", test$popup, "<br/>",
+      "Flag: ", test$FLAG, "<br/>",
+      "Time: ", test$DATETIME, "<br/>",
+      "Speed: ", test$SPEED, "<br/>",
+      "Destination: ", test$DESTINATION, "<br/>",
+      "Course: ", test$COURSE
+)
+
+ggplot(ship_data, aes(DATETIME, SPEED)) +
+    geom_point() + 
+    ggtitle("Ship Speed over Time") + 
+    xlab("")
+    
+observeEvent(input$stats, {
+    output$graph <- renderPlot({
+        ggplot(ship_data(), aes(DATETIME, SPEED))
+    })
+})
+if(input$stats == "Speed"){
+  output$graph <- renderPlot({
+    ggplot(ship_data(), aes(DATETIME, SPEED)) + 
+      geom_point() + 
+      title("Ship Speed over Time")
+  })  
+} else if(input$stats == "Distance"){
+  output$graph <- renderPlot({
+    ggplot(ship_data(), aes(DATETIME, DISTANCE)) + 
+      geom_point() + 
+      title("Ship Distance Sailed over Time")
+  })
+} else if(input$stats == "Status"){
+  output$graph <- renderPlot({
+    ggplot(ship_data(), aes(DATETIME, is_parkchar)) + 
+      geom_point() + 
+      title("Ship Distance Sailed over Time")
+  })
+} else if(input$stats == "Destination"){
+  output$graph <- renderPlot({
+    ggplot(ship_data(), aes(DATETIME, SPEED)) + 
+      geom_point() + 
+      title("Ship Distance Sailed over Time")
+  })
+}
+
