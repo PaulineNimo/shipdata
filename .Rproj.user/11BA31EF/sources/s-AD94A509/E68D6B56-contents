@@ -116,7 +116,7 @@ server <- function(input, output, session) {
         print(as.character(ship_filter()$DATETIME))
 
         info_txt <- data.frame(
-            dist_sailed = paste0("The most recent longest distance sailed by ",input$select_ship," in two minutes is ",formatC(round(ship_filter()[2,"obs_dist"],2), format="d", big.mark=","), " metres.
+            dist_sailed = paste0("The most recent longest distance sailed by ",input$select_ship," in two minutes is ",formatC(ship_filter()[2,"obs_dist"], format="d", big.mark=","), " metres.
                                  This happened between ", as.character(ship_filter()$DATETIME[1]), " and ", as.character(ship_filter()$DATETIME[2]), " UTC."),
             destination = paste0("The ship's destination is  ",ship_filter()[2,"DESTINATION"], "."),
             speed = paste0("The ship's speed was ",ship_filter()[2,"SPEED"], " knots.")
